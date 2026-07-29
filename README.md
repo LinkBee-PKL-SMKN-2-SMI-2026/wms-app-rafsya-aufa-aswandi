@@ -23,7 +23,7 @@ Kegagalan mematuhi aturan di bawah ini berarti **Pull Request (PR) otomatis dito
 - Prisma ORM (PostgreSQL)
 - PostgreSQL (via Docker Compose)
 - Pino (Logging)
-- Zod (Input Validation)
+- Zod (Input Validations)
 
 ## Prasyarat
 - [Bun](https://bun.sh/) (`curl -fsSL https://bun.sh/install | bash`)
