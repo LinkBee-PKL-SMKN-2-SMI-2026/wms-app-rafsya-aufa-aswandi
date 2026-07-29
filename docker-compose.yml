@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: example
+      POSTGRES_DB: wms
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
