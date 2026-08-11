@@ -16,6 +16,7 @@ export const authenticate = (req: AuthRequest, _res: Response, next: NextFunctio
     const payload = verifyAccessToken(token) as TokenPayload;
     req.user = payload; // Simpan payload JWT ke req.user
     next();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return next(new AppError('Token tidak valid atau expired', 401));
   }
