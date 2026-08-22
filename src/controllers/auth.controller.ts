@@ -1,98 +1,98 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/prisma';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
-import { RegisterRequest, LoginRequest } from '../models/auth.dto';
-import { AuthRequest, TokenPayload } from '../types/auth.type';
+import type { RegisterRequest, LoginRequest } from '../models/auth.dto';
+import type { AuthRequest, TokenPayload } from '../types/auth.type';
 
-// 1. REGISTER
-export const register = catchAsync(async (req: Request, res: Response) => {
-  const { name, email, password }: RegisterRequest = req.body;
+export const register = catchAsync(
+  async (
+    req: Request<Record<string, never>, Record<string, never>, RegisterRequest>,
+    res: Response,
+  ) => {
+    const { name, email, password, role } = req.body;
 
-  // Cek apakah email sudah terdaftar
-  const existingUser = await prisma.users.findUnique({ where: { email } });
-  if (existingUser) {
-    throw new AppError('Email sudah terdaftar', 400);
-  }
+    const existing = await prisma.users.findUnique({ where: { email } });
+    if (existing) {
+      throw new AppError('Email sudah terdaftar', 400);
+    }
 
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Simpan user baru ke database
-  const user = await prisma.users.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-    },
-  });
-
-  logger.info(`User baru terdaftar: ${user.email}`);
-
-  // Generate Token
-  const accessToken = generateAccessToken({ userId: user.id, email: user.email });
-  const refreshToken = generateRefreshToken({ userId: user.id, email: user.email });
-
-  res.status(201).json({
-    success: true,
-    message: 'Registrasi berhasil',
-    data: {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.users.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: role || 'STAFF',
       },
-      accessToken,
-      refreshToken,
-    },
-  });
-});
-
-// 2. LOGIN
-export const login = catchAsync(async (req: Request, res: Response) => {
-  const { email, password }: LoginRequest = req.body;
-
-  // Cari user berdasarkan email
-  const user = await prisma.users.findUnique({ where: { email } });
-  if (!user) {
-    throw new AppError('Email atau password salah', 401);
-  }
-
-  // Bandingkan password
-  const isPasswordMatch = await bcrypt.compare(password, user.password);
-  if (!isPasswordMatch) {
-    throw new AppError('Email atau password salah', 401);
-  }
-
-  logger.info(`User berhasil login: ${user.email}`);
-
-  // Generate Token
-  const accessToken = generateAccessToken({ userId: user.id, email: user.email });
-  const refreshToken = generateRefreshToken({ userId: user.id, email: user.email });
-
-  res.json({
-    success: true,
-    message: 'Login berhasil',
-    data: {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
       },
-      accessToken,
-      refreshToken,
-    },
-  });
-});
+    });
+
+    logger.info({ event: 'USER_REGISTERED', userId: user.id }, `User terdaftar: ${user.email}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'User berhasil didaftarkan',
+      data: user,
+    });
+  },
+);
+
+export const login = catchAsync(
+  async (
+    req: Request<Record<string, never>, Record<string, never>, LoginRequest>,
+    res: Response,
+  ) => {
+    const { email, password } = req.body;
+
+    const user = await prisma.users.findUnique({ where: { email } });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new AppError('Email atau password salah', 401);
+    }
+
+    if (!user.isActive) {
+      throw new AppError('Akun dinonaktifkan', 403);
+    }
+
+    const payload: TokenPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const secret: string = process.env.JWT_SECRET || 'supersecret';
+    const token = jwt.sign(payload, secret, {
+      expiresIn: '1d',
+    });
+
+    res.json({
+      success: true,
+      message: 'Login berhasil',
+      data: {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
+    });
+  },
+);
 
 export const getMe = catchAsync(async (req: AuthRequest, res: Response) => {
-  const { userId } = req.user as TokenPayload;
-
   const user = await prisma.users.findUnique({
-    where: { id: userId },
+    where: { id: req.user?.userId },
     select: {
       id: true,
       name: true,
@@ -109,7 +109,7 @@ export const getMe = catchAsync(async (req: AuthRequest, res: Response) => {
 
   res.json({
     success: true,
-    message: 'Data user berhasil diambil',
+    message: 'Profile berhasil diambil',
     data: user,
   });
 });
