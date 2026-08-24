@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: example-db
+    container_name: wms
     restart: unless-stopped
     ports:
       - "5432:5432"
@@ -12,7 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d example"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d wms"]
       interval: 5s
       timeout: 5s
       retries: 5
