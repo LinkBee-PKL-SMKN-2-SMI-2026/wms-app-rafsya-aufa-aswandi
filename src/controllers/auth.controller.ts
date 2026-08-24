@@ -5,6 +5,7 @@ import { prisma } from '../utils/prisma';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
+import { logActivity } from '../services/activity-log.service';
 import type { RegisterRequest, LoginRequest } from '../models/auth.dto';
 import type { AuthRequest, TokenPayload } from '../types/auth.type';
 
@@ -35,6 +36,14 @@ export const register = catchAsync(async (req: Request, res: Response) => {
 
   logger.info({ event: 'USER_REGISTERED', userId: user.id }, `User terdaftar: ${user.email}`);
 
+  void logActivity({
+    userId: user.id,
+    action: 'CREATE',
+    entity: 'Users',
+    entityId: user.id,
+    detail: { email: user.email, role: user.role },
+  });
+
   res.status(201).json({
     success: true,
     message: 'User berhasil didaftarkan',
@@ -63,6 +72,13 @@ export const login = catchAsync(async (req: Request, res: Response) => {
   const secret: string = process.env.JWT_SECRET || 'supersecret';
   const token = jwt.sign(payload, secret, {
     expiresIn: '1d',
+  });
+
+  void logActivity({
+    userId: user.id,
+    action: 'LOGIN',
+    entity: 'Users',
+    entityId: user.id,
   });
 
   res.json({

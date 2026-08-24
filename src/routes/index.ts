@@ -6,6 +6,7 @@ import productRoute from './product.route';
 import movementRoute from './stock-movement.route';
 import reportRoute from './reporting.route';
 import dashboardRoute from './dashboard.route';
+import activityLogRoute from './activity-log.route';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/products', productRoute);
 router.use('/movements', movementRoute);
 router.use('/reports', reportRoute);
 router.use('/dashboard', dashboardRoute);
+router.use('/activity-logs', activityLogRoute);
 
 export default router;

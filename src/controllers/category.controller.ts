@@ -3,9 +3,12 @@ import { prisma } from '../utils/prisma';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
+import { logActivity } from '../services/activity-log.service';
+import type { AuthRequest } from '../types/auth.type';
 
-export const createCategory = catchAsync(async (req: Request, res: Response) => {
+export const createCategory = catchAsync(async (req: AuthRequest, res: Response) => {
   const { name, description } = req.body;
+  const userId = req.user?.userId;
 
   const existing = await prisma.categories.findUnique({ where: { name } });
   if (existing) {
@@ -20,6 +23,16 @@ export const createCategory = catchAsync(async (req: Request, res: Response) => 
     { event: 'CATEGORY_CREATED', categoryId: category.id },
     `Kategori dibuat: ${category.name}`,
   );
+
+  if (userId) {
+    void logActivity({
+      userId,
+      action: 'CREATE',
+      entity: 'Categories',
+      entityId: category.id,
+      detail: { name: category.name },
+    });
+  }
 
   res.status(201).json({
     success: true,
@@ -95,9 +108,10 @@ export const getCategoryById = catchAsync(async (req: Request, res: Response) =>
   });
 });
 
-export const updateCategory = catchAsync(async (req: Request, res: Response) => {
+export const updateCategory = catchAsync(async (req: AuthRequest, res: Response) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const { name, description, isActive } = req.body;
+  const userId = req.user?.userId;
 
   const category = await prisma.categories.findUnique({ where: { id } });
   if (!category) {
@@ -116,6 +130,16 @@ export const updateCategory = catchAsync(async (req: Request, res: Response) => 
     data: { name, description, isActive },
   });
 
+  if (userId) {
+    void logActivity({
+      userId,
+      action: 'UPDATE',
+      entity: 'Categories',
+      entityId: updated.id,
+      detail: { name, description, isActive },
+    });
+  }
+
   res.json({
     success: true,
     message: 'Kategori berhasil diperbarui',
@@ -123,8 +147,9 @@ export const updateCategory = catchAsync(async (req: Request, res: Response) => 
   });
 });
 
-export const deleteCategory = catchAsync(async (req: Request, res: Response) => {
+export const deleteCategory = catchAsync(async (req: AuthRequest, res: Response) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const userId = req.user?.userId;
 
   const category = await prisma.categories.findUnique({
     where: { id },
@@ -144,6 +169,15 @@ export const deleteCategory = catchAsync(async (req: Request, res: Response) => 
   }
 
   await prisma.categories.delete({ where: { id } });
+
+  if (userId) {
+    void logActivity({
+      userId,
+      action: 'DELETE',
+      entity: 'Categories',
+      entityId: id,
+    });
+  }
 
   res.json({
     success: true,

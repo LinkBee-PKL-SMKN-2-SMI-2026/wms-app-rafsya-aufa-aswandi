@@ -2,6 +2,7 @@ import type { Response } from 'express';
 import { prisma } from '../utils/prisma';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
+import { logActivity } from '../services/activity-log.service';
 import type { AuthRequest } from '../types/auth.type';
 import type {
   CreateInboundRequest,
@@ -46,6 +47,14 @@ export const createInbound = catchAsync(async (req: AuthRequest, res: Response) 
     });
 
     return { movement, updatedProduct };
+  });
+
+  void logActivity({
+    userId,
+    action: 'CREATE',
+    entity: 'Stock_Movements',
+    entityId: result.movement.id,
+    detail: { type: 'INBOUND', productId, quantity, notes },
   });
 
   res.status(201).json({
@@ -96,6 +105,14 @@ export const createOutbound = catchAsync(async (req: AuthRequest, res: Response)
     });
 
     return { movement, updatedProduct };
+  });
+
+  void logActivity({
+    userId,
+    action: 'CREATE',
+    entity: 'Stock_Movements',
+    entityId: result.movement.id,
+    detail: { type: 'OUTBOUND', productId, quantity, notes },
   });
 
   res.status(201).json({

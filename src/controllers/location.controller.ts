@@ -3,9 +3,12 @@ import { prisma } from '../utils/prisma';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
+import { logActivity } from '../services/activity-log.service';
+import type { AuthRequest } from '../types/auth.type';
 
-export const createLocation = catchAsync(async (req: Request, res: Response) => {
+export const createLocation = catchAsync(async (req: AuthRequest, res: Response) => {
   const { name, code } = req.body;
+  const userId = req.user?.userId;
 
   const existingName = await prisma.locations.findUnique({ where: { name } });
   if (existingName) {
@@ -25,6 +28,16 @@ export const createLocation = catchAsync(async (req: Request, res: Response) => 
     { event: 'LOCATION_CREATED', locationId: location.id },
     `Lokasi dibuat: ${location.name}`,
   );
+
+  if (userId) {
+    void logActivity({
+      userId,
+      action: 'CREATE',
+      entity: 'Locations',
+      entityId: location.id,
+      detail: { name: location.name, code: location.code },
+    });
+  }
 
   res.status(201).json({
     success: true,
@@ -100,9 +113,10 @@ export const getLocationById = catchAsync(async (req: Request, res: Response) =>
   });
 });
 
-export const updateLocation = catchAsync(async (req: Request, res: Response) => {
+export const updateLocation = catchAsync(async (req: AuthRequest, res: Response) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const { name, code, isActive } = req.body;
+  const userId = req.user?.userId;
 
   const location = await prisma.locations.findUnique({ where: { id } });
   if (!location) {
@@ -128,6 +142,16 @@ export const updateLocation = catchAsync(async (req: Request, res: Response) => 
     data: { name, code, isActive },
   });
 
+  if (userId) {
+    void logActivity({
+      userId,
+      action: 'UPDATE',
+      entity: 'Locations',
+      entityId: updated.id,
+      detail: { name, code, isActive },
+    });
+  }
+
   res.json({
     success: true,
     message: 'Lokasi berhasil diperbarui',
@@ -135,8 +159,9 @@ export const updateLocation = catchAsync(async (req: Request, res: Response) => 
   });
 });
 
-export const deleteLocation = catchAsync(async (req: Request, res: Response) => {
+export const deleteLocation = catchAsync(async (req: AuthRequest, res: Response) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const userId = req.user?.userId;
 
   const location = await prisma.locations.findUnique({
     where: { id },
@@ -156,6 +181,15 @@ export const deleteLocation = catchAsync(async (req: Request, res: Response) => 
   }
 
   await prisma.locations.delete({ where: { id } });
+
+  if (userId) {
+    void logActivity({
+      userId,
+      action: 'DELETE',
+      entity: 'Locations',
+      entityId: id,
+    });
+  }
 
   res.json({
     success: true,

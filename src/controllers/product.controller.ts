@@ -3,9 +3,12 @@ import { prisma } from '../utils/prisma';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
+import { logActivity } from '../services/activity-log.service';
+import type { AuthRequest } from '../types/auth.type';
 
-export const createProduct = catchAsync(async (req: Request, res: Response) => {
+export const createProduct = catchAsync(async (req: AuthRequest, res: Response) => {
   const { name, sku, description, stock, minimumStock, categoryId, locationId } = req.body;
+  const userId = req.user?.userId;
 
   const existingSku = await prisma.products.findUnique({ where: { sku } });
   if (existingSku) {
@@ -42,6 +45,16 @@ export const createProduct = catchAsync(async (req: Request, res: Response) => {
     { event: 'PRODUCT_CREATED', productId: product.id },
     `Produk dibuat: ${product.name}`,
   );
+
+  if (userId) {
+    void logActivity({
+      userId,
+      action: 'CREATE',
+      entity: 'Products',
+      entityId: product.id,
+      detail: { name: product.name, sku: product.sku },
+    });
+  }
 
   res.status(201).json({
     success: true,
@@ -123,9 +136,10 @@ export const getProductById = catchAsync(async (req: Request, res: Response) => 
   });
 });
 
-export const updateProduct = catchAsync(async (req: Request, res: Response) => {
+export const updateProduct = catchAsync(async (req: AuthRequest, res: Response) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const { name, sku, description, minimumStock, isActive, categoryId, locationId } = req.body;
+  const userId = req.user?.userId;
 
   const product = await prisma.products.findUnique({ where: { id } });
   if (!product) {
@@ -170,6 +184,16 @@ export const updateProduct = catchAsync(async (req: Request, res: Response) => {
     },
   });
 
+  if (userId) {
+    void logActivity({
+      userId,
+      action: 'UPDATE',
+      entity: 'Products',
+      entityId: updated.id,
+      detail: { name, sku, minimumStock, isActive, categoryId, locationId },
+    });
+  }
+
   res.json({
     success: true,
     message: 'Produk berhasil diperbarui',
@@ -177,8 +201,9 @@ export const updateProduct = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-export const deleteProduct = catchAsync(async (req: Request, res: Response) => {
+export const deleteProduct = catchAsync(async (req: AuthRequest, res: Response) => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const userId = req.user?.userId;
 
   const product = await prisma.products.findUnique({
     where: { id },
@@ -201,6 +226,15 @@ export const deleteProduct = catchAsync(async (req: Request, res: Response) => {
   }
 
   await prisma.products.delete({ where: { id } });
+
+  if (userId) {
+    void logActivity({
+      userId,
+      action: 'DELETE',
+      entity: 'Products',
+      entityId: id,
+    });
+  }
 
   res.json({
     success: true,
