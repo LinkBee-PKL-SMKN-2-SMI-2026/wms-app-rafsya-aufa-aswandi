@@ -1,0 +1,2392 @@
+openapi: 3.1.0
+info:
+  title: Activity Logs API
+  version: 1.0.0
+  description: Audit and user activity logging endpoints
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+tags:
+  - name: Activity Logs
+    x-displayName: Activity Logs
+  - name: Auth
+    x-displayName: Auth
+  - name: Categories
+    x-displayName: Categories
+  - name: Dashboard
+    x-displayName: Dashboard
+  - name: Example
+    x-displayName: Example
+  - name: Locations
+    x-displayName: Locations
+  - name: Products
+    x-displayName: Products
+  - name: Reports
+    x-displayName: Reports
+  - name: Stock Movements
+    x-displayName: Stock Movements
+paths:
+  /activity-logs:
+    get:
+      summary: Get audit activity logs
+      tags:
+        - Activity Logs
+      security:
+        - Activity_Logs_API_bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: action
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: entity
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Activity logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: >-
+                  #/components/schemas/Activity_Logs_API_ActivityLogPaginatedResponse
+  /auth/register:
+    post:
+      summary: Register new user
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Auth_API_RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Auth_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Auth_API_UserResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_API_ErrorResponse'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_API_ErrorResponse'
+  /auth/login:
+    post:
+      summary: Login user
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Auth_API_LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Auth_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Auth_API_LoginResponseData'
+        '400':
+          description: Invalid input or credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_API_ErrorResponse'
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_API_ErrorResponse'
+  /auth/me:
+    get:
+      summary: Get logged-in user profile
+      tags:
+        - Auth
+      security:
+        - Auth_API_bearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Auth_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Auth_API_UserResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auth_API_ErrorResponse'
+  /categories:
+    get:
+      summary: Get all categories
+      tags:
+        - Categories
+      security:
+        - Categories_API_bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categories_API_CategoryPaginatedResponse'
+    post:
+      summary: Create a category (Admin only)
+      tags:
+        - Categories
+      security:
+        - Categories_API_bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Categories_API_CreateCategoryRequest'
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Categories_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Categories_API_Category'
+        '409':
+          description: Category name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categories_API_ErrorResponse'
+  /categories/{id}:
+    get:
+      summary: Get category by ID
+      tags:
+        - Categories
+      security:
+        - Categories_API_bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Category retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Categories_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Categories_API_Category'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categories_API_ErrorResponse'
+    put:
+      summary: Update category (Admin only)
+      tags:
+        - Categories
+      security:
+        - Categories_API_bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Categories_API_UpdateCategoryRequest'
+      responses:
+        '200':
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Categories_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Categories_API_Category'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categories_API_ErrorResponse'
+    delete:
+      summary: Delete category (Admin only)
+      tags:
+        - Categories
+      security:
+        - Categories_API_bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Category deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Categories_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Categories_API_Category'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categories_API_ErrorResponse'
+  /dashboard/stats:
+    get:
+      summary: Get overview dashboard statistics
+      tags:
+        - Dashboard
+      security:
+        - Dashboard_Stats_API_bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard stats retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Dashboard_Stats_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: >-
+                          #/components/schemas/Dashboard_Stats_API_DashboardStats
+  /dashboard/recent-movements:
+    get:
+      summary: Get recent stock movements for dashboard
+      tags:
+        - Dashboard
+      security:
+        - Dashboard_Stats_API_bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 5
+      responses:
+        '200':
+          description: Recent movements retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Dashboard_Stats_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: >-
+                            #/components/schemas/Dashboard_Stats_API_RecentMovementItem
+  /example:
+    get:
+      summary: Get all examples
+      description: Retrieve paginated examples with search, filter, and sort
+      tags:
+        - Example
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number (default 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          description: Items per page (default 10, max 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: search
+          in: query
+          required: false
+          description: Search by name (case-insensitive)
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          description: Sort by name
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: isActive
+          in: query
+          required: false
+          description: Filter by active status
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Examples retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Example_API_ApiPaginatedResponse'
+    post:
+      summary: Create a new example
+      tags:
+        - Example
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Example_API_CreateExampleRequest'
+      responses:
+        '201':
+          description: Example created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Example_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Example_API_Example'
+        '409':
+          description: Example name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Example_API_ErrorResponse'
+  /example/bulk:
+    post:
+      summary: Bulk create examples
+      description: >-
+        Create multiple examples at once. Each item is processed individually —
+        successful ones return in `data`, failures in `failed`.
+      tags:
+        - Example
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Example_API_BulkCreateRequest'
+      responses:
+        '201':
+          description: Bulk create completed (partial success possible)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Example_API_Example'
+                  failed:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Example_API_BulkCreateFailedItem'
+  /example/with-items:
+    post:
+      summary: Create example with nested items
+      tags:
+        - Example
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Example_API_CreateWithItemsRequest'
+      responses:
+        '201':
+          description: Example with items created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Example_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: >-
+                          #/components/schemas/Example_API_CreateWithItemsResponse
+        '400':
+          description: Duplicate product names in request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Example_API_ErrorResponse'
+        '409':
+          description: Example name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Example_API_ErrorResponse'
+  /example/{id}:
+    get:
+      summary: Get example by ID
+      tags:
+        - Example
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Example ID (UUID)
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Example retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Example_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Example_API_ExampleWithItems'
+        '404':
+          description: Example not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Example_API_ErrorResponse'
+    put:
+      summary: Full update an example
+      tags:
+        - Example
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Example ID (UUID)
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Example_API_UpdateExampleRequest'
+      responses:
+        '200':
+          description: Example updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Example_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Example_API_Example'
+        '404':
+          description: Example not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Example_API_ErrorResponse'
+        '409':
+          description: Name conflicts with another record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Example_API_ErrorResponse'
+    patch:
+      summary: Partial update an example
+      tags:
+        - Example
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Example ID (UUID)
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Example_API_PartialUpdateExampleRequest'
+      responses:
+        '200':
+          description: Example partially updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Example_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Example_API_Example'
+        '400':
+          description: No fields provided for update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Example_API_ErrorResponse'
+        '404':
+          description: Example not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Example_API_ErrorResponse'
+        '409':
+          description: Name conflicts with another record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Example_API_ErrorResponse'
+    delete:
+      summary: Delete an example
+      tags:
+        - Example
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Example ID (UUID)
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Example deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Example_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Example_API_Example'
+        '404':
+          description: Example not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Example_API_ErrorResponse'
+  /locations:
+    get:
+      summary: Get all locations
+      tags:
+        - Locations
+      security:
+        - Locations_API_bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Locations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Locations_API_LocationPaginatedResponse'
+    post:
+      summary: Create location (Admin only)
+      tags:
+        - Locations
+      security:
+        - Locations_API_bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Locations_API_CreateLocationRequest'
+      responses:
+        '201':
+          description: Location created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Locations_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Locations_API_Location'
+        '409':
+          description: Location code or name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Locations_API_ErrorResponse'
+  /locations/{id}:
+    get:
+      summary: Get location by ID
+      tags:
+        - Locations
+      security:
+        - Locations_API_bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Location retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Locations_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Locations_API_Location'
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Locations_API_ErrorResponse'
+    put:
+      summary: Update location (Admin only)
+      tags:
+        - Locations
+      security:
+        - Locations_API_bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Locations_API_UpdateLocationRequest'
+      responses:
+        '200':
+          description: Location updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Locations_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Locations_API_Location'
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Locations_API_ErrorResponse'
+    delete:
+      summary: Delete location (Admin only)
+      tags:
+        - Locations
+      security:
+        - Locations_API_bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Location deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Locations_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Locations_API_Location'
+        '404':
+          description: Location not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Locations_API_ErrorResponse'
+  /products:
+    get:
+      summary: Get all products
+      tags:
+        - Products
+      security:
+        - Products_API_bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: locationId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Products_API_ProductPaginatedResponse'
+    post:
+      summary: Create a product (Admin only)
+      tags:
+        - Products
+      security:
+        - Products_API_bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Products_API_CreateProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Products_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Products_API_Product'
+        '409':
+          description: Product SKU already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Products_API_ErrorResponse'
+  /products/{id}:
+    get:
+      summary: Get product by ID
+      tags:
+        - Products
+      security:
+        - Products_API_bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Products_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Products_API_Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Products_API_ErrorResponse'
+    put:
+      summary: Update product (Admin only)
+      tags:
+        - Products
+      security:
+        - Products_API_bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Products_API_UpdateProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Products_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Products_API_Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Products_API_ErrorResponse'
+    delete:
+      summary: Delete product (Admin only)
+      tags:
+        - Products
+      security:
+        - Products_API_bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Products_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Products_API_Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Products_API_ErrorResponse'
+  /products/{id}/stock:
+    get:
+      summary: Get product stock balance
+      tags:
+        - Products
+      security:
+        - Products_API_bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product stock retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Products_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Products_API_ProductStock'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Products_API_ErrorResponse'
+  /reports/summary:
+    get:
+      summary: Get inventory summary report
+      tags:
+        - Reports
+      security:
+        - Reports_API_bearerAuth: []
+      parameters:
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: locationId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Summary report retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Reports_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Reports_API_InventorySummary'
+  /reports/low-stock:
+    get:
+      summary: Get low-stock alerts
+      tags:
+        - Reports
+      security:
+        - Reports_API_bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Low-stock report retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reports_API_LowStockPaginatedResponse'
+  /movements/inbound:
+    post:
+      summary: Record inbound stock movement
+      tags:
+        - Stock Movements
+      security:
+        - Stock_Movements_API_bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Stock_Movements_API_CreateMovementRequest'
+      responses:
+        '201':
+          description: Inbound movement recorded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Stock_Movements_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Stock_Movements_API_StockMovement'
+        '400':
+          description: Bad request / validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock_Movements_API_ErrorResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock_Movements_API_ErrorResponse'
+  /movements/outbound:
+    post:
+      summary: Record outbound stock movement
+      tags:
+        - Stock Movements
+      security:
+        - Stock_Movements_API_bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Stock_Movements_API_CreateMovementRequest'
+      responses:
+        '201':
+          description: Outbound movement recorded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Stock_Movements_API_ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Stock_Movements_API_StockMovement'
+        '400':
+          description: Insufficient stock or invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock_Movements_API_ErrorResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock_Movements_API_ErrorResponse'
+  /movements/history:
+    get:
+      summary: Get stock movement history
+      tags:
+        - Stock Movements
+      security:
+        - Stock_Movements_API_bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: productId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - INBOUND
+              - OUTBOUND
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Movement history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: >-
+                  #/components/schemas/Stock_Movements_API_MovementPaginatedResponse
+components:
+  securitySchemes:
+    Activity_Logs_API_bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    Auth_API_bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    Categories_API_bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    Dashboard_Stats_API_bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    Locations_API_bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    Products_API_bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    Reports_API_bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    Stock_Movements_API_bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Activity_Logs_API_PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+    Activity_Logs_API_ActivityLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        entity:
+          type: string
+        entityId:
+          type: string
+          nullable: true
+        detail:
+          type: object
+          nullable: true
+        userId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - action
+        - entity
+        - userId
+        - createdAt
+    Activity_Logs_API_ActivityLogPaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity_Logs_API_ActivityLog'
+        pagination:
+          $ref: '#/components/schemas/Activity_Logs_API_PaginationMeta'
+      required:
+        - success
+        - message
+        - data
+        - pagination
+    Auth_API_ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          description: Response payload
+      required:
+        - success
+        - message
+    Auth_API_ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+        - success
+        - message
+    Auth_API_RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum:
+            - ADMIN
+            - STAFF
+          default: STAFF
+    Auth_API_LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    Auth_API_UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+            - ADMIN
+            - STAFF
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - role
+        - isActive
+        - createdAt
+        - updatedAt
+    Auth_API_LoginResponseData:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/Auth_API_UserResponse'
+      required:
+        - token
+        - user
+    Categories_API_ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          description: Payload
+      required:
+        - success
+        - message
+    Categories_API_PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+    Categories_API_Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - isActive
+        - createdAt
+        - updatedAt
+    Categories_API_CategoryPaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Categories_API_Category'
+        pagination:
+          $ref: '#/components/schemas/Categories_API_PaginationMeta'
+      required:
+        - success
+        - message
+        - data
+        - pagination
+    Categories_API_CreateCategoryRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+          default: true
+    Categories_API_UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+    Categories_API_ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: object
+      required:
+        - success
+        - message
+    Dashboard_Stats_API_ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          description: Payload
+      required:
+        - success
+        - message
+    Dashboard_Stats_API_DashboardStats:
+      type: object
+      properties:
+        totalProducts:
+          type: integer
+        totalCategories:
+          type: integer
+        totalLocations:
+          type: integer
+        totalStock:
+          type: integer
+        lowStockAlertCount:
+          type: integer
+        totalInboundMovements:
+          type: integer
+        totalOutboundMovements:
+          type: integer
+      required:
+        - totalProducts
+        - totalCategories
+        - totalLocations
+        - totalStock
+        - lowStockAlertCount
+    Dashboard_Stats_API_RecentMovementItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - INBOUND
+            - OUTBOUND
+        quantity:
+          type: integer
+        productName:
+          type: string
+        userEmail:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - quantity
+        - createdAt
+    Example_API_ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates whether the request was successful
+        message:
+          type: string
+          description: Response message
+        data:
+          description: Response payload
+      required:
+        - success
+        - message
+    Example_API_ApiPaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Example_API_ExampleWithItems'
+        pagination:
+          $ref: '#/components/schemas/Example_API_PaginationMeta'
+      required:
+        - success
+        - message
+        - data
+        - pagination
+    Example_API_PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number
+        limit:
+          type: integer
+          description: Items per page
+        total:
+          type: integer
+          description: Total number of items
+        totalPages:
+          type: integer
+          description: Total number of pages
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+    Example_API_ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Error message
+        errors:
+          type: object
+          description: Field-level validation errors
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+        - success
+        - message
+    Example_API_Example:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Example ID
+        name:
+          type: string
+          description: Example name
+        description:
+          type: string
+          nullable: true
+          description: Example description
+        isActive:
+          type: boolean
+          description: Active status
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - isActive
+        - createdAt
+        - updatedAt
+    Example_API_ExampleWithItems:
+      allOf:
+        - $ref: '#/components/schemas/Example_API_Example'
+        - type: object
+          properties:
+            items:
+              type: array
+              description: Related items
+              items:
+                $ref: '#/components/schemas/Example_API_ExampleItem'
+          required:
+            - items
+    Example_API_ExampleItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Item ID
+        productName:
+          type: string
+          description: Product name
+        quantity:
+          type: integer
+          description: Quantity
+        price:
+          type: integer
+          description: Price in smallest currency unit (e.g. cents)
+        exampleId:
+          type: string
+          format: uuid
+          description: Parent example ID
+      required:
+        - id
+        - productName
+        - quantity
+        - price
+        - exampleId
+    Example_API_CreateExampleRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 3
+          description: Example name (min 3 characters)
+        description:
+          type: string
+          description: Example description
+        isActive:
+          type: boolean
+          default: true
+          description: Active status (defaults to true)
+    Example_API_UpdateExampleRequest:
+      type: object
+      required:
+        - name
+        - isActive
+      properties:
+        name:
+          type: string
+          minLength: 3
+          description: Example name (min 3 characters)
+        description:
+          type: string
+          description: Example description
+        isActive:
+          type: boolean
+          description: Active status
+    Example_API_PartialUpdateExampleRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 3
+          description: Example name (min 3 characters)
+        description:
+          type: string
+          description: Example description
+        isActive:
+          type: boolean
+          description: Active status
+    Example_API_BulkCreateRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          description: Array of examples to create (1-50 items)
+          items:
+            type: object
+            required:
+              - name
+            properties:
+              name:
+                type: string
+                minLength: 3
+                description: Example name (min 3 characters)
+              description:
+                type: string
+                description: Example description
+              isActive:
+                type: boolean
+                default: true
+                description: Active status
+    Example_API_BulkCreateFailedItem:
+      type: object
+      properties:
+        index:
+          type: integer
+          description: Index of the failed item in the request array
+        name:
+          type: string
+          description: Name of the failed item
+        reason:
+          type: string
+          description: Failure reason
+      required:
+        - index
+        - name
+        - reason
+    Example_API_ItemInput:
+      type: object
+      required:
+        - productName
+        - quantity
+        - price
+      properties:
+        productName:
+          type: string
+          minLength: 1
+          description: Product name
+        quantity:
+          type: integer
+          exclusiveMinimum: 0
+          description: Quantity (must be > 0)
+        price:
+          type: integer
+          exclusiveMinimum: 0
+          description: Price in smallest currency unit (must be > 0)
+    Example_API_CreateWithItemsRequest:
+      type: object
+      required:
+        - name
+        - category
+        - items
+      properties:
+        name:
+          type: string
+          minLength: 3
+          description: Example name (min 3 characters)
+        category:
+          type: string
+          minLength: 1
+          description: Category name
+        items:
+          type: array
+          minItems: 1
+          maxItems: 20
+          description: Array of items (1-20 items)
+          items:
+            $ref: '#/components/schemas/Example_API_ItemInput'
+    Example_API_CreateWithItemsResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Example ID
+        name:
+          type: string
+          description: Example name
+        category:
+          type: string
+          description: Category name
+        items:
+          type: array
+          description: Created items
+          items:
+            $ref: '#/components/schemas/Example_API_ExampleItem'
+        totalItems:
+          type: integer
+          description: Sum of all item quantities
+        totalValue:
+          type: integer
+          description: Sum of all item price * quantity
+      required:
+        - id
+        - name
+        - category
+        - items
+        - totalItems
+        - totalValue
+    Locations_API_ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          description: Payload
+      required:
+        - success
+        - message
+    Locations_API_PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+    Locations_API_Location:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        code:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - code
+        - isActive
+        - createdAt
+        - updatedAt
+    Locations_API_LocationPaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Locations_API_Location'
+        pagination:
+          $ref: '#/components/schemas/Locations_API_PaginationMeta'
+      required:
+        - success
+        - message
+        - data
+        - pagination
+    Locations_API_CreateLocationRequest:
+      type: object
+      required:
+        - name
+        - code
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        isActive:
+          type: boolean
+          default: true
+    Locations_API_UpdateLocationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        isActive:
+          type: boolean
+    Locations_API_ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: object
+      required:
+        - success
+        - message
+    Products_API_ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          description: Payload
+      required:
+        - success
+        - message
+    Products_API_PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+    Products_API_Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+          nullable: true
+        stock:
+          type: integer
+        minimumStock:
+          type: integer
+        isActive:
+          type: boolean
+        categoryId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - sku
+        - stock
+        - minimumStock
+        - isActive
+        - categoryId
+        - locationId
+        - createdAt
+        - updatedAt
+    Products_API_ProductStock:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sku:
+          type: string
+        stock:
+          type: integer
+        minimumStock:
+          type: integer
+        status:
+          type: string
+          enum:
+            - NORMAL
+            - LOW_STOCK
+            - OUT_OF_STOCK
+      required:
+        - id
+        - name
+        - sku
+        - stock
+        - minimumStock
+    Products_API_ProductPaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Products_API_Product'
+        pagination:
+          $ref: '#/components/schemas/Products_API_PaginationMeta'
+      required:
+        - success
+        - message
+        - data
+        - pagination
+    Products_API_CreateProductRequest:
+      type: object
+      required:
+        - name
+        - sku
+        - categoryId
+        - locationId
+      properties:
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+        stock:
+          type: integer
+          default: 0
+        minimumStock:
+          type: integer
+          default: 10
+        categoryId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
+          default: true
+    Products_API_UpdateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+        stock:
+          type: integer
+        minimumStock:
+          type: integer
+        categoryId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
+    Products_API_ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: object
+      required:
+        - success
+        - message
+    Reports_API_ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          description: Payload
+      required:
+        - success
+        - message
+    Reports_API_PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+    Reports_API_InventorySummary:
+      type: object
+      properties:
+        totalProducts:
+          type: integer
+        totalStock:
+          type: integer
+        totalLowStock:
+          type: integer
+        totalCategories:
+          type: integer
+        totalLocations:
+          type: integer
+      required:
+        - totalProducts
+        - totalStock
+        - totalLowStock
+        - totalCategories
+        - totalLocations
+    Reports_API_LowStockItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sku:
+          type: string
+        stock:
+          type: integer
+        minimumStock:
+          type: integer
+        categoryName:
+          type: string
+        locationName:
+          type: string
+      required:
+        - id
+        - name
+        - sku
+        - stock
+        - minimumStock
+    Reports_API_LowStockPaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reports_API_LowStockItem'
+        pagination:
+          $ref: '#/components/schemas/Reports_API_PaginationMeta'
+      required:
+        - success
+        - message
+        - data
+        - pagination
+    Stock_Movements_API_ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          description: Payload
+      required:
+        - success
+        - message
+    Stock_Movements_API_PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+    Stock_Movements_API_StockMovement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - INBOUND
+            - OUTBOUND
+        quantity:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+        userId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - quantity
+        - userId
+        - productId
+        - createdAt
+    Stock_Movements_API_MovementPaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Stock_Movements_API_StockMovement'
+        pagination:
+          $ref: '#/components/schemas/Stock_Movements_API_PaginationMeta'
+      required:
+        - success
+        - message
+        - data
+        - pagination
+    Stock_Movements_API_CreateMovementRequest:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+    Stock_Movements_API_ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: object
+      required:
+        - success
+        - message

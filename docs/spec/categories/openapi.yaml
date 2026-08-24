@@ -1,0 +1,301 @@
+openapi: 3.1.0
+info:
+  title: Categories API
+  version: 1.0.0
+  description: Management endpoints for categories
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+
+paths:
+  /categories:
+    get:
+      summary: Get all categories
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryPaginatedResponse"
+
+    post:
+      summary: Create a category (Admin only)
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "201":
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Category"
+        "409":
+          description: Category name already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /categories/{id}:
+    get:
+      summary: Get category by ID
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Category retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Category"
+        "404":
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      summary: Update category (Admin only)
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoryRequest"
+      responses:
+        "200":
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Category"
+        "404":
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: Delete category (Admin only)
+      tags:
+        - Categories
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Category deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Category"
+        "404":
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          description: Payload
+      required:
+        - success
+        - message
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - isActive
+        - createdAt
+        - updatedAt
+
+    CategoryPaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - success
+        - message
+        - data
+        - pagination
+
+    CreateCategoryRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+          default: true
+
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: object
+      required:
+        - success
+        - message

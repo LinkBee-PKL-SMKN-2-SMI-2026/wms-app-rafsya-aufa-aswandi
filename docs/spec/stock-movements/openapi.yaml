@@ -1,0 +1,254 @@
+openapi: 3.1.0
+info:
+  title: Stock Movements API
+  version: 1.0.0
+  description: Inbound and outbound stock movement transaction endpoints
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+
+paths:
+  /movements/inbound:
+    post:
+      summary: Record inbound stock movement
+      tags:
+        - Stock Movements
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMovementRequest"
+      responses:
+        "201":
+          description: Inbound movement recorded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/StockMovement"
+        "400":
+          description: Bad request / validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /movements/outbound:
+    post:
+      summary: Record outbound stock movement
+      tags:
+        - Stock Movements
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMovementRequest"
+      responses:
+        "201":
+          description: Outbound movement recorded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/StockMovement"
+        "400":
+          description: Insufficient stock or invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /movements/history:
+    get:
+      summary: Get stock movement history
+      tags:
+        - Stock Movements
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: productId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [INBOUND, OUTBOUND]
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Movement history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovementPaginatedResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          description: Payload
+      required:
+        - success
+        - message
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+
+    StockMovement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [INBOUND, OUTBOUND]
+        quantity:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+        userId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - quantity
+        - userId
+        - productId
+        - createdAt
+
+    MovementPaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockMovement"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - success
+        - message
+        - data
+        - pagination
+
+    CreateMovementRequest:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: object
+      required:
+        - success
+        - message

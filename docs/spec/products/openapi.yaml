@@ -1,0 +1,416 @@
+openapi: 3.1.0
+info:
+  title: Products API
+  version: 1.0.0
+  description: Management endpoints for products and inventory stock
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+
+paths:
+  /products:
+    get:
+      summary: Get all products
+      tags:
+        - Products
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: locationId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: isActive
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductPaginatedResponse"
+
+    post:
+      summary: Create a product (Admin only)
+      tags:
+        - Products
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductRequest"
+      responses:
+        "201":
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Product"
+        "409":
+          description: Product SKU already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{id}:
+    get:
+      summary: Get product by ID
+      tags:
+        - Products
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Product retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      summary: Update product (Admin only)
+      tags:
+        - Products
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductRequest"
+      responses:
+        "200":
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: Delete product (Admin only)
+      tags:
+        - Products
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Product deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{id}/stock:
+    get:
+      summary: Get product stock balance
+      tags:
+        - Products
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Product stock retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ProductStock"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          description: Payload
+      required:
+        - success
+        - message
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+          nullable: true
+        stock:
+          type: integer
+        minimumStock:
+          type: integer
+        isActive:
+          type: boolean
+        categoryId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - sku
+        - stock
+        - minimumStock
+        - isActive
+        - categoryId
+        - locationId
+        - createdAt
+        - updatedAt
+
+    ProductStock:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sku:
+          type: string
+        stock:
+          type: integer
+        minimumStock:
+          type: integer
+        status:
+          type: string
+          enum: [NORMAL, LOW_STOCK, OUT_OF_STOCK]
+      required:
+        - id
+        - name
+        - sku
+        - stock
+        - minimumStock
+
+    ProductPaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - success
+        - message
+        - data
+        - pagination
+
+    CreateProductRequest:
+      type: object
+      required:
+        - name
+        - sku
+        - categoryId
+        - locationId
+      properties:
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+        stock:
+          type: integer
+          default: 0
+        minimumStock:
+          type: integer
+          default: 10
+        categoryId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
+          default: true
+
+    UpdateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        sku:
+          type: string
+        description:
+          type: string
+        stock:
+          type: integer
+        minimumStock:
+          type: integer
+        categoryId:
+          type: string
+          format: uuid
+        locationId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: object
+      required:
+        - success
+        - message

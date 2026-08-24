@@ -22,13 +22,16 @@
     "db:generate": "prisma generate",
     "db:reset": "prisma migrate reset",
     "db:status": "prisma migrate status",
-    "setup": "bun run db:up && bun run db:generate && bun run db:migrate"
+    "setup": "bun run db:up && bun run db:generate && bun run db:migrate",
+    "bundle:docs": "bun run scripts/bundle-docs.ts",
+    "docs": "bun run scripts/serve-docs.ts"
   },
   "prisma": {
     "seed": "bun run ./prisma/seed/index.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@redocly/cli": "^2.47.0",
     "@types/bcrypt": "^6.0.0",
     "@types/bun": "latest",
     "@types/jsonwebtoken": "^9.0.10",
