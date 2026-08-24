@@ -1,0 +1,126 @@
+openapi: 3.1.0
+info:
+  title: Activity Logs API
+  version: 1.0.0
+  description: Audit and user activity logging endpoints
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+
+paths:
+  /activity-logs:
+    get:
+      summary: Get audit activity logs
+      tags:
+        - Activity Logs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: action
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: entity
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Activity logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityLogPaginatedResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+
+    ActivityLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        entity:
+          type: string
+        entityId:
+          type: string
+          nullable: true
+        detail:
+          type: object
+          nullable: true
+        userId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - action
+        - entity
+        - userId
+        - createdAt
+
+    ActivityLogPaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityLog"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - success
+        - message
+        - data
+        - pagination
